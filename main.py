@@ -69,8 +69,65 @@ wget("https://raw.githubusercontent.com/scikit-learn/examples-data/master/financ
 wget("https://raw.githubusercontent.com/scikit-learn/examples-data/master/financial-data/XRX.csv")
 wget("https://raw.githubusercontent.com/scikit-learn/examples-data/master/financial-data/YHOO.csv")
 
-# 1
-# 2
+# 1 y 2
+
+
+print('Ingrese las empresas que desea comparar: ')
+ea = str(input('Empresa A. ej:(AAPL): ')) + ".csv"
+eb = str(input('Empresa B. ej:(BAC): ')) + ".csv"
+
+ea_file = pd.read_csv(ea)
+eb_file = pd.read_csv(eb)
+ea_list = ea_file.to_dict("list")
+eb_list = eb_file.to_dict("list")
+
+# print(ea_list)
+# print(eb_list)
+
+plt.figure(figsize=(16, 8))
+
+# Empiezan con el valor del primer dia
+ea_x = [ea_list["date"][0]]
+ea_y = [ea_list["open"][0]]
+eb_x = [eb_list["date"][0]]
+eb_y = [eb_list["open"][0]]
+
+cruce_x = []
+cruce_y = []
+
+data = {}
+
+# range empieza desde 1 en vez de 0
+for i in range(1, len(ea_list["date"])):
+    ea_x.append(ea_list["date"][i])
+    ea_y.append(ea_list["open"][i])
+    eb_x.append(eb_list["date"][i])
+    eb_y.append(eb_list["open"][i])
+
+    # Condicional de cruce (son iguales o invirtieron su orden)
+    if (eb_y[i] == ea_y[i]) or (eb_y[i] > ea_y[i] and eb_y[i-1] < ea_y[i-1]) or (eb_y[i] < ea_y[i] and eb_y[i-1] > ea_y[i-1]):
+        cruce_x.append(ea_x[i])
+        cruce_y.append(ea_y[i])
+
+data["Fecha"] = cruce_x
+data["Valor"] = cruce_y
+
+# Guardamos la informacion en una tabla
+dataFrame = pd.DataFrame(data)
+# print(dataFrame)
+
+# Exportamos la información a un archivo
+dataFrame.to_excel("intercepciones-"+ea+"-"+eb+".xlsx")
+
+
+plt.plot(ea_x, ea_y, 'g', label=ea)
+plt.plot(eb_x, eb_y, 'r-.', label=eb)
+plt.plot(cruce_x, cruce_y, 'k.', label='Puntos de cruce')
+plt.xticks(ea_x[::100], rotation=60)
+plt.legend()
+
+plt.show()
+
 # 3
 # 4
 
@@ -124,5 +181,3 @@ plt.xticks(gx[::100], rotation=60)
 plt.legend()
 
 plt.show()
-
-# Funcionalidad Opcional
