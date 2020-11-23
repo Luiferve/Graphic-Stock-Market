@@ -69,8 +69,6 @@ wget("https://raw.githubusercontent.com/scikit-learn/examples-data/master/financ
 wget("https://raw.githubusercontent.com/scikit-learn/examples-data/master/financial-data/XRX.csv")
 wget("https://raw.githubusercontent.com/scikit-learn/examples-data/master/financial-data/YHOO.csv")
 
-# 1 y 2
-
 
 print('Ingrese las empresas que desea comparar: ')
 ea = str(input('Empresa A. ej:(AAPL): ')) + ".csv"
@@ -95,6 +93,11 @@ eb_y = [eb_list["open"][0]]
 cruce_x = []
 cruce_y = []
 
+dif_ea_x = []
+dif_eb_x = []
+dif_ea_y = []
+dif_eb_y = []
+
 data = {}
 
 # range empieza desde 1 en vez de 0
@@ -104,11 +107,19 @@ for i in range(1, len(ea_list["date"])):
     eb_x.append(eb_list["date"][i])
     eb_y.append(eb_list["open"][i])
 
+    # Para Derivada Discreta
+    dif_ea_x.append(ea_list["date"][i])
+    dif_eb_x.append(eb_list["date"][i])
+    dif_ea_y.append(ea_list["open"][i] - ea_list["open"][i-1])
+    dif_eb_y.append(eb_list["open"][i] - eb_list["open"][i-1])
+
     # Condicional de cruce (son iguales o invirtieron su orden)
-    if (eb_y[i] == ea_y[i]) or (eb_y[i] > ea_y[i] and eb_y[i-1] < ea_y[i-1]) or (eb_y[i] < ea_y[i] and eb_y[i-1] > ea_y[i-1]):
+    if (eb_y[i] == ea_y[i]) or (eb_y[i] > ea_y[i] and eb_y[i-1] < ea_y[i-1]) or (
+            eb_y[i] < ea_y[i] and eb_y[i-1] > ea_y[i-1]):
         cruce_x.append(ea_x[i])
         cruce_y.append(ea_y[i])
 
+# Guardamos los valores de las intercepciones en el Diccionario
 data["Fecha"] = cruce_x
 data["Valor"] = cruce_y
 
@@ -119,23 +130,32 @@ dataFrame = pd.DataFrame(data)
 # Exportamos la información a un archivo
 dataFrame.to_excel("intercepciones-"+ea+"-"+eb+".xlsx")
 
-
-plt.plot(ea_x, ea_y, 'g', label=ea)
+plt.subplot(1, 2, 1)
+plt.title("Gráfico Comparativo")
+plt.plot(ea_x, ea_y, 'g-', label=ea)
 plt.plot(eb_x, eb_y, 'r-.', label=eb)
 plt.plot(cruce_x, cruce_y, 'k.', label='Puntos de cruce')
+plt.xlabel('Fecha')
+plt.ylabel('Valor')
 plt.xticks(ea_x[::100], rotation=60)
+plt.legend()
+
+plt.subplot(1, 2, 2)
+plt.title("Deriva Discreta")
+plt.plot(dif_ea_x, dif_ea_y, 'g-', label=ea)
+plt.plot(dif_eb_x, dif_eb_y, 'r-.', label=eb)
+plt.xlabel('Fecha')
+plt.xticks(dif_ea_x[::100], rotation=60)
 plt.legend()
 
 plt.show()
 
-# 3
-# 4
+# Grafico a entregar: REQUISITO
 
 
 wget("https://raw.githubusercontent.com/IEEESBITBA/Curso-Python/master/Clase_4_datos/AMZN.csv")
 wget("https://raw.githubusercontent.com/IEEESBITBA/Curso-Python/master/Clase_4_datos/GOOGLE.csv")
 
-# Grafico a entregar: REQUISITO
 google_file = pd.read_csv("GOOGLE.csv")
 amazon_file = pd.read_csv("AMZN.csv")
 google = google_file.to_dict("list")
@@ -179,5 +199,5 @@ plt.plot(ax, ay, 'r-.', label='Amazon')
 plt.plot(cruce_x, cruce_y, 'k.', label='Puntos de cruce')
 plt.xticks(gx[::100], rotation=60)
 plt.legend()
-
+plt.savefig('Grafico-comparativo.png')
 plt.show()
