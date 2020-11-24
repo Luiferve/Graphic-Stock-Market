@@ -70,21 +70,37 @@ wget("https://raw.githubusercontent.com/scikit-learn/examples-data/master/financ
 wget("https://raw.githubusercontent.com/scikit-learn/examples-data/master/financial-data/YHOO.csv")
 
 
-print('Ingrese las empresas que desea comparar: ')
-ea = str(input('Empresa A. ej:(AAPL): ')) + ".csv"
-eb = str(input('Empresa B. ej:(BAC): ')) + ".csv"
+# Diccionario de empresas disponibles.
+stock = ['AAPL', 'AIG', 'AMZN', 'AXP', 'BA', 'BAC', 'CAJ', 'CAT', 'CL', 'CMCSA',
+         'COP', 'CSCO', 'CVC', 'CVS', 'CVX', 'DD', 'DELL', 'F', 'GD', 'GE', 'GS',
+         'GSK', 'HD', 'HMC', 'HPQ', 'IBM', 'JPM', 'K', 'KMB', 'KO', 'MAR', 'MCD',
+         'MMM', 'MSFT', 'NAV', 'NOC', 'NVS', 'PEP', 'PFE', 'PG', 'R', 'RTN', 'SAP',
+         'SNE', 'SNY', 'TM', 'TOT', 'TWX', 'TXN', 'UN', 'VLO', 'WFC', 'WMT',
+         'XOM', 'XRX', 'YHOO']
+
+for accion in stock:
+    print(accion)
+
+print('Ingrese las acciones que desea comparar: ')
+
+ea = input(str('Accion A. ej:(AAPL): '))
+while not (ea in stock):  # Condicional para seleccion de empresa (Solo entre las disponibles).
+    ea = input(str('Intente nuevamente con una accion existente. ej:(AAPL): '))
+
+eb = input(str('Accion B. ej:(BAC): '))
+while not (eb in stock) or (eb == ea):
+    eb = input(str('Intente nuevamente con una accion existente. ej:(BAC): '))
+
+# Agregamos la extension del archivo para cuando lo busque en el sistema.
+ea = ea + ".csv"
+eb = eb + ".csv"
 
 ea_file = pd.read_csv(ea)
 eb_file = pd.read_csv(eb)
 ea_list = ea_file.to_dict("list")
 eb_list = eb_file.to_dict("list")
 
-# print(ea_list)
-# print(eb_list)
-
-plt.figure(figsize=(16, 8))
-
-# Empiezan con el valor del primer dia
+# Empiezan con el valor del primer dia.
 ea_x = [ea_list["date"][0]]
 ea_y = [ea_list["open"][0]]
 eb_x = [eb_list["date"][0]]
@@ -93,15 +109,44 @@ eb_y = [eb_list["open"][0]]
 cruce_x = []
 cruce_y = []
 
+# Empiezan vacias para poder calcular la Derivada Diferencial entre el primer y segundo valor.
 dif_ea_x = []
 dif_eb_x = []
 dif_ea_y = []
 dif_eb_y = []
 
-data = {}
+data_intercepcion = {}  # Diccionario vacio para los valores comunes entres las acciones a guardar en excel.
 
-# range empieza desde 1 en vez de 0
+ea_sep_done = False # Boolean para medir el mes.
+ea_oct_done = False
+ea_nov_done = False
+ea_jan_done = False
+ea_year_opening = 0
+ea_year_closing = ea_list["close"][len(ea_list["close"]) - 1] # Ultimo valor de la accion.
+ea_sep_opening = 0
+ea_sep_closing = 0
+ea_oct_opening = 0
+ea_oct_closing = 0
+data_ea = {}
+
+eb_sep_done = False
+eb_oct_done = False
+eb_nov_done = False
+eb_jan_done = False
+eb_year_opening = 0
+eb_year_closing = eb_list["close"][len(eb_list["close"]) - 1]
+eb_sep_opening = 0
+eb_sep_closing = 0
+eb_oct_opening = 0
+eb_oct_closing = 0
+data_eb = {}
+
+plt.figure(figsize=(16, 8))
+
+# range empieza desde 1 en vez de 0 para comparar con el primer valor.
 for i in range(1, len(ea_list["date"])):
+    ea_temp_date = ea_list["date"][i]
+    eb_temp_date = eb_list["date"][i]
     ea_x.append(ea_list["date"][i])
     ea_y.append(ea_list["open"][i])
     eb_x.append(eb_list["date"][i])
@@ -114,18 +159,80 @@ for i in range(1, len(ea_list["date"])):
     dif_eb_y.append(eb_list["open"][i] - eb_list["open"][i-1])
 
     # Condicional de cruce (son iguales o invirtieron su orden)
-    if (eb_y[i] == ea_y[i]) or (eb_y[i] > ea_y[i] and eb_y[i-1] < ea_y[i-1]) or (
-            eb_y[i] < ea_y[i] and eb_y[i-1] > ea_y[i-1]):
+    if (eb_y[i] == ea_y[i]) or (eb_y[i] > ea_y[i] and eb_y[i-1] < ea_y[i-1]) or (eb_y[i] < ea_y[i] and eb_y[i-1] > ea_y[i-1]):
         cruce_x.append(ea_x[i])
         cruce_y.append(ea_y[i])
 
+    # Condicional de valor de la accion por fechas.
+    if not ea_jan_done and (ea_temp_date >= '2007-01-01'):
+        ea_year_opening = ea_list["open"][i]
+        ea_jan_done = True
+    if not ea_sep_done and (ea_temp_date >= '2007-09-01'):
+        ea_sep_opening = ea_list["open"][i]
+        ea_sep_done = True
+    if not ea_oct_done and (ea_temp_date >= '2007-10-01'):
+        ea_oct_opening = ea_list["open"][i]
+        ea_sep_closing = ea_oct_opening
+        ea_oct_done = True
+    if not ea_nov_done and (ea_temp_date >= '2007-11-01'):
+        ea_nov_opening = ea_list["open"][i]
+        ea_oct_closing = ea_nov_opening
+        ea_nov_done = True
+
+    # Condicional de valor de la accion por fechas.
+    if not eb_jan_done and (eb_temp_date >= '2007-01-01'):
+        eb_year_opening = eb_list["open"][i]
+        eb_jan_done = True
+    if not eb_sep_done and (eb_temp_date >= '2007-09-01'):
+        eb_sep_opening = eb_list["open"][i]
+        eb_sep_done = True
+    if not eb_oct_done and (eb_temp_date >= '2007-10-01'):
+        eb_oct_opening = eb_list["open"][i]
+        eb_sep_closing = eb_oct_opening
+        eb_oct_done = True
+    if not eb_nov_done and (eb_temp_date >= '2007-11-01'):
+        eb_nov_opening = eb_list["open"][i]
+        eb_oct_closing = eb_nov_opening
+        eb_nov_done = True
+
+# Calculo del porcentaje de crecimiento de la accion A.
+ea_year_grow = ((ea_year_closing/ea_year_opening) - 1) * 100
+ea_sep_grow = ((ea_sep_closing/ea_sep_opening) - 1) * 100
+ea_oct_grow = ((ea_oct_closing/ea_oct_opening) - 1) * 100
+
 # Guardamos los valores de las intercepciones en el Diccionario
-data["Fecha"] = cruce_x
-data["Valor"] = cruce_y
+data_ea["% de Crecimiento Anual"] = ea_year_grow
+data_ea["% de Crecimiento en el ultimo mes"] = ea_sep_grow
+data_ea["% de Crecimiento en el penultimo mes"] = ea_oct_grow
 
 # Guardamos la informacion en una tabla
-dataFrame = pd.DataFrame(data)
-# print(dataFrame)
+dataFrame = pd.DataFrame({'Valor':data_ea})
+
+# Exportamos la información a un archivo
+dataFrame.to_excel("Porcentaje-Crecimiento-"+ea+".xlsx")
+
+# Calculo del porcentaje de crecimiento de la accion B.
+eb_year_grow = ((eb_year_closing/eb_year_opening) - 1) * 100
+eb_sep_grow = ((eb_sep_closing/eb_sep_opening) - 1) * 100
+eb_oct_grow = ((eb_oct_closing/eb_oct_opening) - 1) * 100
+
+# Guardamos los valores de las intercepciones en el Diccionario
+data_eb["% de Crecimiento Anual"] = eb_year_grow
+data_eb["% de Crecimiento en el ultimo mes"] = eb_sep_grow
+data_eb["% de Crecimiento en el penultimo mes"] = eb_oct_grow
+
+# Guardamos la informacion en una tabla
+dataFrame = pd.DataFrame({'Valor':data_eb})
+
+# Exportamos la información a un archivo
+dataFrame.to_excel("Porcentaje-Crecimiento-"+eb+".xlsx")
+
+# Guardamos los valores de las intercepciones en el Diccionario
+data_intercepcion["Fecha"] = cruce_x
+data_intercepcion["Valor"] = cruce_y
+
+# Guardamos la informacion en una tabla
+dataFrame = pd.DataFrame(data_intercepcion)
 
 # Exportamos la información a un archivo
 dataFrame.to_excel("intercepciones-"+ea+"-"+eb+".xlsx")
